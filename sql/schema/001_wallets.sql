@@ -1,7 +1,7 @@
 -- +goose Up
 CREATE TABLE wallets(
 	id UUID PRIMARY KEY,
-	balance INTEGER NOT NULL,
+	balance INTEGER NOT NULL DEFAULT 0,
 	created_at TIMESTAMP DEFAULT NOW(),
 	updated_at TIMESTAMP DEFAULT NOW()
 );

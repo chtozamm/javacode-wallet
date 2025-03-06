@@ -45,7 +45,7 @@ func main() {
 	log.Println("Creating database connection pool...")
 	dbPool, err := pgxpool.New(context.Background(), dbURL)
 	if err != nil {
-		log.Fatalf("Unable to create connection pool: %v", err)
+		log.Fatalf("Unable to create database connection pool: %v", err)
 	}
 	defer dbPool.Close()
 

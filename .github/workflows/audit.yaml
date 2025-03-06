@@ -1,4 +1,4 @@
-name: Lint
+name: Audit
 on: [push, pull_request]
 
 permissions:
@@ -7,6 +7,8 @@ permissions:
 jobs:
   audit:
     runs-on: ubuntu-latest
+    env:
+      GO111MODULE: on
 
     steps:
       - uses: actions/checkout@v4
@@ -20,3 +22,11 @@ jobs:
         run: go install honnef.co/go/tools/cmd/staticcheck@latest
       - name: Run staticcheck
         run: staticcheck ./...
+      - name: Run go build
+        run: CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o wallet-server -ldflags="-s -w" ./cmd
+      - name: Run Gosec Security Scanner
+        uses: securego/gosec@master
+        with:
+          args: ./...
+      # - name: Run tests
+      #   run: go test -race -vet=off ./...

@@ -6,12 +6,6 @@
 **Статус ответа**: 201 Created | 500 Internal Server Error  
 **Тело ответа**: `uuid` (идентификатор созданного кошелька)
 
-### Получение баланса кошелька
-
-`GET /api/v1/wallets/{wallet_id}`  
-**Статус ответа**: 200 OK | 404 Not Found | 500 Internal Server Error  
-**Тело ответа**: `int32` (баланс кошелька)
-
 ### Пополнение или снятие средств с кошелька
 
 `POST /api/v1/wallets/{wallet_id}`  
@@ -25,19 +19,20 @@
 }
 ```
 
-**Статус ответа**: 200 OK | 400 Bad Request | 404 Not Found | 500 Internal Server Error  
-**Тело ответа**: `int32` (новый баланс кошелька)
+**Статус ответа**: 204 No Content | 400 Bad Request | 404 Not Found | 500 Internal Server Error  
+**Тело ответа**: (нет содержимого)
+
+### Получение баланса кошелька
+
+`GET /api/v1/wallets/{wallet_id}`  
+**Статус ответа**: 200 OK | 404 Not Found | 500 Internal Server Error  
+**Тело ответа**: `int32` (баланс кошелька)
 
 ### Удаление кошелька
 
 `DELETE /api/v1/wallets/{wallet_id}`  
-**Статус ответа**: 204 No Content (нет содержимого)
-
-### Проверка состояния сервера
-
-`GET /api/v1/healthz`  
-**Статус ответа**: 200 OK | 500 Internal Server Error  
-**Тело ответа**: "OK" | "Internal Server Error"
+**Статус ответа**: 204 No Content  
+**Тело ответа**: (нет содержимого)
 
 ### Получение списка созданных кошельков
 
@@ -56,3 +51,10 @@
 	}
 ]
 ```
+
+### Проверка состояния сервера
+
+`GET /api/v1/healthz`  
+**Статус ответа**: 200 OK | 500 Internal Server Error  
+**Тело ответа**: "OK" | "Internal Server Error"
+

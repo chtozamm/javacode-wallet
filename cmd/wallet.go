@@ -41,7 +41,7 @@ func (app *application) handleOperation(w http.ResponseWriter, r *http.Request) 
 
 	// Check operation type
 	if op.OperationType != deposit && op.OperationType != withdraw {
-		http.Error(w, "Unsupported operation type", http.StatusBadRequest)
+		http.Error(w, "Unsupported operation type: expected operation_type to be \"deposit\" or \"withdraw\"", http.StatusBadRequest)
 		return
 	}
 
@@ -103,7 +103,10 @@ func (app *application) handleOperation(w http.ResponseWriter, r *http.Request) 
 	}
 
 	// Update wallet balance
-	updatedBalance, err := queriesWithTx.UpdateWallet(r.Context(), newBalance)
+	err = queriesWithTx.UpdateWallet(r.Context(), database.UpdateWalletParams{
+		ID:      walletUUID,
+		Balance: newBalance,
+	})
 	if err != nil {
 		http.Error(w, "Failed to update wallet balance: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -117,13 +120,7 @@ func (app *application) handleOperation(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	// Write response with new balance
-	w.Header().Set("Content-Type", "text/plain")
-	_, err = fmt.Fprintf(w, "%d", updatedBalance)
-	if err != nil {
-		log.Printf("Failed to write response: %v\n", err)
-		http.Error(w, "Failed to write response", http.StatusInternalServerError)
-	}
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (app *application) handleGetBalance(w http.ResponseWriter, r *http.Request) {
@@ -149,7 +146,7 @@ func (app *application) handleGetBalance(w http.ResponseWriter, r *http.Request)
 
 	// Write response with current balance
 	w.Header().Set("Content-Type", "text/plain")
-	_, err = fmt.Fprintf(w, "%d", balance)
+	_, err = fmt.Fprintln(w, balance)
 	if err != nil {
 		log.Printf("Failed to write response: %v\n", err)
 		http.Error(w, "Failed to write response", http.StatusInternalServerError)
@@ -168,7 +165,7 @@ func (app *application) handleGetWallets(w http.ResponseWriter, r *http.Request)
 	// If no wallets are found, return an empty JSON array
 	if len(wallets) == 0 {
 		w.Header().Set("Content-Type", "application/json")
-		_, err := w.Write([]byte("[]"))
+		_, err := fmt.Fprintln(w, "[]")
 		if err != nil {
 			log.Printf("Failed to write response: %v\n", err)
 			http.Error(w, "Failed to write response", http.StatusInternalServerError)
@@ -195,8 +192,8 @@ func (app *application) handleGetWallets(w http.ResponseWriter, r *http.Request)
 }
 
 func (app *application) handleCreateWallet(w http.ResponseWriter, r *http.Request) {
-	// Create new empty wallet and return its ID
-	walletID, err := app.queries.CreateWallet(r.Context(), 0)
+	// Create new wallet and return its ID
+	walletID, err := app.queries.CreateWallet(r.Context())
 	if err != nil {
 		log.Printf("Failed to create wallet: %v\n", err)
 		http.Error(w, "Failed to create wallet", http.StatusInternalServerError)
@@ -206,7 +203,7 @@ func (app *application) handleCreateWallet(w http.ResponseWriter, r *http.Reques
 	// Write response with wallet ID
 	w.WriteHeader(http.StatusCreated)
 	w.Header().Set("Content-Type", "text/plain")
-	_, err = w.Write([]byte(walletID.String()))
+	_, err = fmt.Fprintln(w, walletID)
 	if err != nil {
 		log.Printf("Failed to write response: %v\n", err)
 		http.Error(w, "Failed to write response", http.StatusInternalServerError)

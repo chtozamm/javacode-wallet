@@ -15,7 +15,7 @@ func (app *application) handleHealthCheck(w http.ResponseWriter, r *http.Request
 	}
 
 	// Write the response
-	_, err = w.Write([]byte("OK"))
+	_, err = w.Write([]byte("OK\n"))
 	if err != nil {
 		log.Printf("Failed to write response: %v\n", err)
 		http.Error(w, "Failed to write response", http.StatusInternalServerError)

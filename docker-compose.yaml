@@ -4,8 +4,6 @@ services:
   wallet-server:
     build:
       context: .
-      # context: ..
-      # dockerfile: "docker/Dockerfile"
     image: wallet-server:latest
     container_name: wallet-server
     environment:
@@ -13,7 +11,8 @@ services:
     ports:
       - 8080:8080
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
 
   postgres:
     image: postgres
@@ -26,6 +25,11 @@ services:
       - 5432:5432
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U javacode -d wallet"]
+      interval: 2s
+      timeout: 5s
+      retries: 5
 
 volumes:
   postgres_data:
