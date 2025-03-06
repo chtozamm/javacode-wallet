@@ -1,0 +1,31 @@
+name: "javacode-wallet"
+
+services:
+  wallet-server:
+    build:
+      context: .
+      # context: ..
+      # dockerfile: "docker/Dockerfile"
+    image: wallet-server:latest
+    container_name: wallet-server
+    environment:
+      - DB_URL=postgres://javacode:secret@postgres:5432/wallet
+    ports:
+      - 8080:8080
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres
+    container_name: wallet-postgres
+    environment:
+      POSTGRES_USER: javacode
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: wallet
+    ports:
+      - 5432:5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
