@@ -184,7 +184,7 @@ func (app *application) handleGetWallets(w http.ResponseWriter, r *http.Request)
 	// Write response with wallets
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK) // Explicitly set status to 200 OK
-	_, err = w.Write(walletsJSON)
+	_, err = fmt.Fprintln(w, string(walletsJSON))
 	if err != nil {
 		log.Printf("Failed to write response: %v\n", err)
 		http.Error(w, "Failed to write response", http.StatusInternalServerError)
