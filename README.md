@@ -106,8 +106,6 @@ curl http://localhost:8080/api/v1/wallets/$wallet_id -X POST \
 
 ### Проверка баланса
 
-Проверьте баланс кошелька:
-
 ```bash
 curl http://localhost:8080/api/v1/wallets/$wallet_id
 ```

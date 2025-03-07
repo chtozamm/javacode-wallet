@@ -9,17 +9,49 @@ import (
 	"net/http"
 
 	"github.com/chtozamm/javacode-wallet/internal/database"
+	"github.com/chtozamm/javacode-wallet/internal/operations"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const (
-	deposit  = "deposit"
-	withdraw = "withdraw"
-)
+func (app *application) handleCreateWallet(w http.ResponseWriter, r *http.Request) {
+	// Create a new wallet
+	walletID, err := app.queries.CreateWallet(r.Context())
+	if err != nil {
+		log.Printf("Failed to create wallet: %v\n", err)
+		http.Error(w, "Failed to create wallet", http.StatusInternalServerError)
+		return
+	}
 
-type operation struct {
-	OperationType string `json:"operation_type"`
-	Amount        int32  `json:"amount"`
+	// Respond with the wallet's ID
+	w.WriteHeader(http.StatusCreated)
+	w.Header().Set("Content-Type", "text/plain")
+	writeResponse(w, walletID.String())
+}
+
+func (app *application) handleGetBalance(w http.ResponseWriter, r *http.Request) {
+	// Read and parse wallet UUID from path
+	walletUUID := pgtype.UUID{}
+	err := walletUUID.Scan(r.PathValue("wallet_id"))
+	if err != nil {
+		http.Error(w, "Invalid wallet ID", http.StatusBadRequest)
+		return
+	}
+
+	// Get current wallet balance
+	balance, err := app.queries.GetBalance(r.Context(), walletUUID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			http.Error(w, "Wallet not found", http.StatusNotFound)
+			return
+		}
+		log.Printf("Failed to get wallet balance: %v\n", err)
+		http.Error(w, "Failed to get wallet balance", http.StatusInternalServerError)
+		return
+	}
+
+	// Write response with current balance
+	w.Header().Set("Content-Type", "text/plain")
+	writeResponse(w, balance)
 }
 
 func (app *application) handleOperation(w http.ResponseWriter, r *http.Request) {
@@ -32,7 +64,7 @@ func (app *application) handleOperation(w http.ResponseWriter, r *http.Request) 
 	}
 
 	// Decode JSON from request to struct
-	var op operation
+	var op operations.Operation
 	err = json.NewDecoder(r.Body).Decode(&op)
 	if err != nil {
 		http.Error(w, "Invalid request body: "+err.Error(), http.StatusBadRequest)
@@ -40,7 +72,7 @@ func (app *application) handleOperation(w http.ResponseWriter, r *http.Request) 
 	}
 
 	// Check operation type
-	if op.OperationType != deposit && op.OperationType != withdraw {
+	if op.OperationType != operations.Deposit && op.OperationType != operations.Withdraw {
 		http.Error(w, "Unsupported operation type: expected operation_type to be \"deposit\" or \"withdraw\"", http.StatusBadRequest)
 		return
 	}
@@ -66,14 +98,14 @@ func (app *application) handleOperation(w http.ResponseWriter, r *http.Request) 
 	// Calculate new balance
 	var newBalance int32
 	switch op.OperationType {
-	case deposit:
+	case operations.Deposit:
 		newBalance = oldBalance + op.Amount
-	case withdraw:
+	case operations.Withdraw:
 		newBalance = oldBalance - op.Amount
 	}
 
 	// Check balance before withdrawal
-	if op.OperationType == withdraw && newBalance < 0 {
+	if op.OperationType == operations.Withdraw && newBalance < 0 {
 		http.Error(w, fmt.Sprintf("Insufficient funds to withdraw: balance %d, trying to withdraw %d", oldBalance, op.Amount), http.StatusPaymentRequired)
 		return
 	}
@@ -123,36 +155,6 @@ func (app *application) handleOperation(w http.ResponseWriter, r *http.Request) 
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func (app *application) handleGetBalance(w http.ResponseWriter, r *http.Request) {
-	// Read and parse wallet UUID from path
-	walletUUID := pgtype.UUID{}
-	err := walletUUID.Scan(r.PathValue("wallet_id"))
-	if err != nil {
-		http.Error(w, "Invalid wallet ID", http.StatusBadRequest)
-		return
-	}
-
-	// Get current wallet balance
-	balance, err := app.queries.GetBalance(r.Context(), walletUUID)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			http.Error(w, "Wallet not found", http.StatusNotFound)
-			return
-		}
-		log.Printf("Failed to get wallet balance: %v\n", err)
-		http.Error(w, "Failed to get wallet balance", http.StatusInternalServerError)
-		return
-	}
-
-	// Write response with current balance
-	w.Header().Set("Content-Type", "text/plain")
-	_, err = fmt.Fprintln(w, balance)
-	if err != nil {
-		log.Printf("Failed to write response: %v\n", err)
-		http.Error(w, "Failed to write response", http.StatusInternalServerError)
-	}
-}
-
 func (app *application) handleGetWallets(w http.ResponseWriter, r *http.Request) {
 	// Get wallets from the database
 	wallets, err := app.queries.GetWallets(r.Context())
@@ -183,31 +185,7 @@ func (app *application) handleGetWallets(w http.ResponseWriter, r *http.Request)
 
 	// Write response with wallets
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK) // Explicitly set status to 200 OK
-	_, err = fmt.Fprintln(w, string(walletsJSON))
-	if err != nil {
-		log.Printf("Failed to write response: %v\n", err)
-		http.Error(w, "Failed to write response", http.StatusInternalServerError)
-	}
-}
-
-func (app *application) handleCreateWallet(w http.ResponseWriter, r *http.Request) {
-	// Create new wallet and return its ID
-	walletID, err := app.queries.CreateWallet(r.Context())
-	if err != nil {
-		log.Printf("Failed to create wallet: %v\n", err)
-		http.Error(w, "Failed to create wallet", http.StatusInternalServerError)
-		return
-	}
-
-	// Write response with wallet ID
-	w.WriteHeader(http.StatusCreated)
-	w.Header().Set("Content-Type", "text/plain")
-	_, err = fmt.Fprintln(w, walletID)
-	if err != nil {
-		log.Printf("Failed to write response: %v\n", err)
-		http.Error(w, "Failed to write response", http.StatusInternalServerError)
-	}
+	writeResponse(w, string(walletsJSON))
 }
 
 func (app *application) handleDeleteWallet(w http.ResponseWriter, r *http.Request) {
@@ -222,10 +200,6 @@ func (app *application) handleDeleteWallet(w http.ResponseWriter, r *http.Reques
 	// Delete the wallet
 	err = app.queries.DeleteWallet(r.Context(), walletUUID)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			http.Error(w, "Wallet not found", http.StatusNotFound)
-			return
-		}
 		log.Printf("Failed to delete wallet: %v\n", err)
 		http.Error(w, "Failed to delete wallet", http.StatusInternalServerError)
 		return

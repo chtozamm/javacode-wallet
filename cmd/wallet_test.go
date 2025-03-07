@@ -12,6 +12,7 @@ import (
 
 	"github.com/chtozamm/javacode-wallet/internal/database"
 	"github.com/chtozamm/javacode-wallet/internal/mocks"
+	"github.com/chtozamm/javacode-wallet/internal/operations"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -83,10 +84,11 @@ func TestHandleGetBalance(t *testing.T) {
 			// Call the handler
 			app.handleGetBalance(w, req)
 
-			// Check the response
+			// Check the response status code
 			res := w.Result()
 			assert.Equal(t, tc.expectedCode, res.StatusCode)
 
+			// Check the response body
 			body, _ := io.ReadAll(res.Body)
 			assert.Equal(t, tc.expectedBody, string(body))
 		})
@@ -102,7 +104,7 @@ func TestHandleOperation(t *testing.T) {
 		walletID     string
 		mockBalance  int32
 		mockError    error
-		op           operation
+		op           operations.Operation
 		expectedCode int
 		expectedBody string
 	}{
@@ -131,7 +133,7 @@ func TestHandleOperation(t *testing.T) {
 			walletID:     invalidUUID,
 			mockBalance:  0,
 			mockError:    nil,
-			op:           operation{OperationType: withdraw, Amount: 100},
+			op:           operations.Operation{OperationType: operations.Withdraw, Amount: 100},
 			expectedCode: http.StatusBadRequest,
 			expectedBody: "Invalid wallet ID\n",
 		},
@@ -140,7 +142,7 @@ func TestHandleOperation(t *testing.T) {
 			walletID:     validUUID,
 			mockBalance:  50,
 			mockError:    nil,
-			op:           operation{OperationType: withdraw, Amount: 100},
+			op:           operations.Operation{OperationType: operations.Withdraw, Amount: 100},
 			expectedCode: http.StatusPaymentRequired,
 			expectedBody: "Insufficient funds to withdraw: balance 50, trying to withdraw 100\n",
 		},
@@ -149,7 +151,7 @@ func TestHandleOperation(t *testing.T) {
 			walletID:     validUUID,
 			mockBalance:  0,
 			mockError:    sql.ErrNoRows,
-			op:           operation{OperationType: deposit, Amount: 50},
+			op:           operations.Operation{OperationType: operations.Deposit, Amount: 50},
 			expectedCode: http.StatusNotFound,
 			expectedBody: "Wallet not found\n",
 		},
@@ -158,7 +160,7 @@ func TestHandleOperation(t *testing.T) {
 			walletID:     validUUID,
 			mockBalance:  100,
 			mockError:    nil,
-			op:           operation{OperationType: "invalid", Amount: 50},
+			op:           operations.Operation{OperationType: "invalid", Amount: 50},
 			expectedCode: http.StatusBadRequest,
 			expectedBody: "Unsupported operation type: expected operation_type to be \"deposit\" or \"withdraw\"\n",
 		},
@@ -167,7 +169,7 @@ func TestHandleOperation(t *testing.T) {
 			walletID:     validUUID,
 			mockBalance:  100,
 			mockError:    nil,
-			op:           operation{OperationType: deposit, Amount: -10},
+			op:           operations.Operation{OperationType: operations.Deposit, Amount: -10},
 			expectedCode: http.StatusBadRequest,
 			expectedBody: "Amount must be greater than zero\n",
 		},
@@ -176,7 +178,7 @@ func TestHandleOperation(t *testing.T) {
 			walletID:     validUUID,
 			mockBalance:  0,
 			mockError:    errors.New("unexpected error"),
-			op:           operation{OperationType: deposit, Amount: 50},
+			op:           operations.Operation{OperationType: operations.Deposit, Amount: 50},
 			expectedCode: http.StatusInternalServerError,
 			expectedBody: "Failed to get wallet balance\n",
 		},
@@ -209,16 +211,16 @@ func TestHandleOperation(t *testing.T) {
 			// Call the handler
 			app.handleOperation(w, req)
 
-			// Check the response
+			// Check the response status code
 			res := w.Result()
 			assert.Equal(t, tc.expectedCode, res.StatusCode)
 
+			// Check the response body
 			body, err = io.ReadAll(res.Body)
 			if err != nil {
 				t.Fatalf("Failed to read response body: %v", err)
 			}
-			defer res.Body.Close()
-
+			res.Body.Close()
 			assert.Equal(t, tc.expectedBody, string(body))
 		})
 	}

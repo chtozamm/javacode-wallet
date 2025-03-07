@@ -3,34 +3,34 @@
 ### Command
 
 ```bash
+# Create wallet
 wallet_id=$(curl -s http://localhost:8080/api/v1/wallets -X POST)
+
+# Run benchmark
 ab -n 10000 -c 1000 http://localhost:8080/api/v1/wallets/$wallet_id
+
+# Delete wallet
+curl -s $API_URL/wallets/$wallet_id -X DELETE
 ```
 
-### Server Information
+**Server Hostname:** localhost  
+**Server Port:** 8080
 
-- **Server Hostname:** `localhost`
-- **Server Port:** `8080`
+**Document Path:** /api/v1/wallets/2adeb9bf-a962-46d1-aaae-6f7751c02154  
+**Document Length:** 1 bytes
 
-### Request Details
+**Concurrency Level:** 1000  
+**Time taken for tests:** 3.014 seconds  
+**Complete requests:** 10000  
+**Failed requests:** 0  
+**Total transferred:** 1020000 bytes  
+**HTML transferred:** 10000 bytes  
+**Requests per second:** 3318.07 \[#/sec\] (mean)  
+**Time per request:** 301.380 \[ms\] (mean)  
+**Time per request:** 0.301 \[ms\] (mean, across all concurrent requests)  
+**Transfer rate:** 330.51 \[Kbytes/sec\] received
 
-- **Document Path:** `/api/v1/wallets/2adeb9bf-a962-46d1-aaae-6f7751c02154`
-- **Document Length:** `1 bytes`
-
-### Performance Metrics
-
-- **Concurrency Level:** `1000`
-- **Time taken for tests:** `3.014 seconds`
-- **Complete requests:** `10000`
-- **Failed requests:** `0`
-- **Total transferred:** `1020000 bytes`
-- **HTML transferred:** `10000 bytes`
-- **Requests per second:** `3318.07 [#/sec] (mean)`
-- **Time per request:** `301.380 [ms] (mean)`
-- **Time per request:** `0.301 [ms] (mean, across all concurrent requests)`
-- **Transfer rate:** `330.51 [Kbytes/sec] received`
-
-### Connection Times (ms)
+## Connection Times (ms)
 
 | Type       | Min | Mean | +/-sd | Median | Max |
 | ---------- | --- | ---- | ----- | ------ | --- |
@@ -39,7 +39,7 @@ ab -n 10000 -c 1000 http://localhost:8080/api/v1/wallets/$wallet_id
 | Waiting    | 4   | 283  | 61.7  | 267    | 532 |
 | **Total**  | 74  | 289  | 68.9  | 271    | 552 |
 
-### Request Time Percentiles (ms)
+## Request Time Percentiles (ms)
 
 | Percentile | Time                  |
 | ---------- | --------------------- |

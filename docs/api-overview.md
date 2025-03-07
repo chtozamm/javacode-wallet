@@ -1,60 +1,114 @@
 # Обзор API
 
-### Создание нового кошелька
+Интерфейс для управления кошельками.
 
-`POST /api/v1/wallets`  
-**Статус ответа**: 201 Created | 500 Internal Server Error  
-**Тело ответа**: `uuid` (идентификатор созданного кошелька)
+- [Создание нового кошелька](#создание-нового-кошелька)
+- [Пополнение или снятие средств с кошелька](#пополнение-или-снятие-средств-с-кошелька)
+- [Получение баланса кошелька](#получение-баланса-кошелька)
+- [Удаление кошелька](#удаление-кошелька)
+- [Получение списка созданных кошельков](#получение-списка-созданных-кошельков)
+- [Проверка состояния сервера](#проверка-состояния-сервера)
 
-### Пополнение или снятие средств с кошелька
+## Создание нового кошелька
 
-`POST /api/v1/wallets/{wallet_id}`  
-**Заголовки запроса**: `"Content-Type": "application/json"`  
+**Запрос**: `POST /api/v1/wallets`  
+**Статус ответа**:
+
+- `201 Created`
+- `500 Internal Server Error`
+
+**Пример ответа**:
+
+```plaintext
+30504a06-1d08-4390-92ef-c03c253d702b
+```
+
+## Пополнение или снятие средств с кошелька
+
+**Запрос**: `POST /api/v1/wallets/{wallet_id}`  
+**Заголовки запроса**:
+
+- `"Content-Type": "application/json"`
+
+**Параметры в теле запроса**:
+
+- **operation_type**: `"deposit"` | `"withdraw"`
+- **amount**: `int32`
+
 **Тело запроса**:
 
 ```json
 {
-	"operation_type": "deposit" | "withdraw",
-	"amount": int32
+  "operation_type": "deposit",
+  "amount": 500
 }
 ```
 
-**Статус ответа**: 204 No Content | 400 Bad Request | 404 Not Found | 500 Internal Server Error  
-**Тело ответа**: (нет содержимого)
+**Статус ответа**:
 
-### Получение баланса кошелька
+- `204 No Content`
+- `400 Bad Request`
+- `404 Not Found`
+- `500 Internal Server Error`
 
-`GET /api/v1/wallets/{wallet_id}`  
-**Статус ответа**: 200 OK | 404 Not Found | 500 Internal Server Error  
-**Тело ответа**: `int32` (баланс кошелька)
+## Получение баланса кошелька
 
-### Удаление кошелька
+**Запрос**: `GET /api/v1/wallets/{wallet_id}`  
+**Статус ответа**:
 
-`DELETE /api/v1/wallets/{wallet_id}`  
-**Статус ответа**: 204 No Content  
-**Тело ответа**: (нет содержимого)
+- `200 OK`
+- `404 Not Found`
+- `500 Internal Server Error`
 
-### Получение списка созданных кошельков
+**Пример ответа**:
 
-`GET /api/v1/wallets`  
-**Заголовки запроса**: `Authorization: Basic {base64_encoded_credentials}` (требуется базовая аутентификация)  
-**Статус ответа**: 200 OK | 204 No Content | 500 Internal Server Error  
-**Тело ответа**:
+```plaintext
+500
+```
+
+## Удаление кошелька
+
+**Запрос**: `DELETE /api/v1/wallets/{wallet_id}`  
+**Статус ответа**:
+
+- `204 No Content`
+- `500 Internal Server Error`
+
+## Получение списка созданных кошельков
+
+**Запрос**: `GET /api/v1/wallets`  
+**Заголовки запроса**:
+
+- `Authorization: Basic {base64_encoded_credentials}` (требуется базовая аутентификация)
+
+**Статус ответа**:
+
+- `200 OK`
+- `500 Internal Server Error`
+
+**Пример ответа**:
 
 ```json
 [
-	{
-		"id": uuid,
-		"balance": int32,
-		"created_at": timestamp,
-		"updated_at": timestamp
-	}
+  {
+    "id": "30504a06-1d08-4390-92ef-c03c253d702b",
+    "balance": 500,
+    "created_at": "2025-01-01T00:00:00.000000Z",
+    "updated_at": "2025-01-01T00:00:00.000000Z"
+  }
 ]
 ```
 
-### Проверка состояния сервера
+## Проверка состояния сервера
 
-`GET /api/v1/healthz`  
-**Статус ответа**: 200 OK | 500 Internal Server Error  
-**Тело ответа**: "OK" | "Internal Server Error"
+**Запрос**: `GET /api/v1/healthz`  
+**Статус ответа**:
 
+- `200 OK`
+- `500 Internal Server Error`
+
+**Пример ответа**:
+
+```plaintext
+OK
+```
